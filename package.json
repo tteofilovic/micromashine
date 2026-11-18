@@ -1,0 +1,17 @@
+{
+  "name": "micromashine",
+  "version": "0.1.0",
+  "description": "Micro Machines-style top-down racing game for the browser, played over LAN",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

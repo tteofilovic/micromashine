@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="sr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Micromašine</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="panel" class="panel">
+    <h1>Micromašine</h1>
+
+    <form id="joinForm">
+      <input id="name" maxlength="12" placeholder="Tvoje ime" autocomplete="off">
+      <button type="submit">Uđi u trku</button>
+    </form>
+
+    <div id="lobby" hidden>
+      <h2 id="resultTitle" hidden>Konačni poredak</h2>
+      <ul id="players"></ul>
+      <p id="trackName" class="track-name"></p>
+      <button id="start" type="button" hidden>Pokreni trku</button>
+      <p id="wait" hidden>Čekaj da host pokrene trku…</p>
+    </div>
+
+    <p id="msg"></p>
+    <p class="hint">Kontrole: strelice ili WASD. Ko ostane van ekrana ispada. Poslednji u igri dobija bonus, a prvi do 10 poena pobeđuje.</p>
+  </div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
