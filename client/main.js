@@ -16,14 +16,27 @@ const state = {
   target: 5,
   goUntil: 0,
   joined: false,
+  ping: null, // smoothed round-trip time to the server in ms
 };
 
 const net = new Net(onMessage, () => {
+  clearInterval(pingTimer);
+  pingTimer = null;
+  state.ping = null;
   $('panel').hidden = false;
   $('joinForm').hidden = true;
   $('lobby').hidden = true;
   $('msg').textContent = 'Veza sa serverom je prekinuta. Osveži stranicu.';
 });
+
+const PING_INTERVAL_MS = 2000;
+let pingTimer = null;
+function startPinging() {
+  if (pingTimer) return;
+  const ping = () => net.send({ type: 'ping', t: performance.now() });
+  ping();
+  pingTimer = setInterval(ping, PING_INTERVAL_MS);
+}
 
 function setPhase(phase) {
   if (phase === state.phase) return;
@@ -39,7 +52,13 @@ function onMessage(m) {
       state.target = m.target;
       state.joined = true;
       setupInput((msg) => net.send(msg));
+      startPinging();
       break;
+    case 'pong': {
+      const rtt = performance.now() - m.t;
+      state.ping = state.ping === null ? rtt : state.ping * 0.7 + rtt * 0.3;
+      break;
+    }
     case 'lobby':
       state.players = new Map(m.players.map((p) => [p.id, p]));
       state.owner = m.owner;

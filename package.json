@@ -6,10 +6,11 @@
   "private": true,
   "scripts": {
     "start": "node server/index.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "start:lan": "node server/index.js --no-tunnel"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "ws": "^8.18.0"

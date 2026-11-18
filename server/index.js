@@ -6,6 +6,7 @@ import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { Room } from './room.js';
+import { startTunnel } from './tunnel.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLIENT_DIR = path.join(ROOT, 'client');
@@ -106,6 +107,8 @@ export function startServer({ port = 3000, host = '0.0.0.0', roomOptions = {} } 
         room.setInput(player.id, m);
       } else if (m.type === 'start' && player) {
         room.start(player.id);
+      } else if (m.type === 'ping' && player && typeof m.t === 'number') {
+        send(JSON.stringify({ type: 'pong', t: m.t })); // lets the client measure round-trip time
       }
     });
 
@@ -154,6 +157,7 @@ export function startServer({ port = 3000, host = '0.0.0.0', roomOptions = {} } 
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.env.PORT) || 3000;
+  const wantTunnel = !process.argv.includes('--no-tunnel') && !process.env.NO_TUNNEL;
   try {
     const { port: actual } = await startServer({ port });
     console.log('\nMicromašine server radi.\n');
@@ -161,7 +165,31 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const ips = lanAddresses();
     if (ips.length === 0) console.log('  Nije pronađena LAN adresa. Jesi li na mreži?');
     for (const ip of ips) console.log(`  Ostali igrači (LAN):  http://${ip}:${actual}`);
-    console.log('\nPošalji LAN adresu ostalima. Ctrl+C za kraj.\n');
+
+    if (wantTunnel) {
+      console.log('\nPokrećem Cloudflare tunel za igranje preko interneta…');
+      const tunnel = startTunnel(actual, {
+        onUrl: (url) => {
+          console.log(`\n  Ostali igrači (internet): ${url}`);
+          console.log('  Svako ko ima ovaj link može da uđe u igru dok server radi.\n');
+        },
+        onError: (msg) => {
+          console.log(`\n  Tunel nije dostupan: ${msg}`);
+          if (/nije instaliran/.test(msg)) console.log('  Instaliraj ga sa: brew install cloudflared');
+          console.log('  Igra i dalje radi na lokalnoj mreži (LAN).\n');
+        },
+      });
+      const shutdown = () => {
+        tunnel.stop();
+        process.exit(0);
+      };
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
+      process.on('exit', () => tunnel.stop());
+    } else {
+      console.log('\nTunel je isključen (samo LAN).');
+    }
+    console.log('Ctrl+C za kraj.\n');
   } catch (err) {
     console.error(err.code === 'EADDRINUSE' ? `Port ${port} je zauzet. Probaj: PORT=3001 npm start` : err);
     process.exit(1);

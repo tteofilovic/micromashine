@@ -48,6 +48,14 @@ test('lobby -> race -> elimination -> point', async (t) => {
   const wb = await b.waitFor((m) => m.type === 'welcome');
   assert.notEqual(wa.id, wb.id);
 
+  // Ping: the server echoes the timestamp back so the client can measure round-trip time.
+  a.send({ type: 'ping', t: 12345.5 });
+  const pong = await a.waitFor((m) => m.type === 'pong');
+  assert.equal(pong.t, 12345.5);
+  // Garbage pings are ignored.
+  a.send({ type: 'ping', t: 'abc' });
+  a.send({ type: 'ping' });
+
   const lobby = await a.waitFor((m) => m.type === 'lobby' && m.players.length === 2);
   assert.equal(lobby.owner, wa.id);
 
@@ -55,6 +63,7 @@ test('lobby -> race -> elimination -> point', async (t) => {
   b.send({ type: 'start' });
   await new Promise((r) => setTimeout(r, 150));
   assert.equal(srv.room.phase, 'lobby');
+  assert.equal(a.msgs.filter((m) => m.type === 'pong').length, 1, 'malformed pings get no reply');
 
   // A late joiner is rejected once the race is running.
   a.send({ type: 'start' });

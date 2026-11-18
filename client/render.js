@@ -190,8 +190,22 @@ function drawList(ctx, lines, top) {
   });
 }
 
+function drawPing(ctx, state) {
+  if (state.ping === null) return;
+  const ms = Math.round(state.ping);
+  const color = ms < 60 ? '#9ccc65' : ms < 120 ? '#ffd54f' : '#ff8a80';
+  ctx.textAlign = 'right';
+  ctx.font = '700 18px system-ui, sans-serif';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+  ctx.strokeText(`ping ${ms} ms`, VIEW_W - 20, 32);
+  ctx.fillStyle = color;
+  ctx.fillText(`ping ${ms} ms`, VIEW_W - 20, 32);
+}
+
 function drawHud(ctx, view, state, now) {
   drawScoreboard(ctx, view, state);
+  drawPing(ctx, state);
   if (!view) return;
 
   const name = (id) => state.players.get(id)?.name ?? '?';
